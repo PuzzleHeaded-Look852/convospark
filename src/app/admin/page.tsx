@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useEffect, useState } from 'react'
 
 type SessionRow = { id: string; created_at: string }
