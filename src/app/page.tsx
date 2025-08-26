@@ -89,13 +89,24 @@ export default function Home() {
             <div className="subtitle">Conversation</div>
             <div style={{ marginTop: 8, marginBottom: 8 }}>
               <label style={{ fontSize: 13, color: 'var(--card-light-muted)', display: 'block', marginBottom: 6 }}>Upload audio file (fallback):</label>
-              <input type="file" accept="audio/*" onChange={async (e) => {
-                const f = e.target.files?.[0];
-                if (!f) return;
-                lastBlobRef.current = f
-                const fd = new FormData(); fd.append('audio', f); fd.append('speaker', speaker);
-                try { await fetch(`/api/transcribe?sessionId=${sessionId}`, { method: 'POST', body: fd }); alert('Uploaded'); } catch { alert('Upload failed'); }
-              }} />
+              <div className="file-input-wrapper">
+                <div className="file-input">
+                  <input id="audio-file-input" type="file" accept="audio/*" onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    lastBlobRef.current = f
+                    const fd = new FormData(); fd.append('audio', f); fd.append('speaker', speaker);
+                    try { await fetch(`/api/transcribe?sessionId=${sessionId}`, { method: 'POST', body: fd }); alert('Uploaded'); } catch { alert('Upload failed'); }
+                  }} />
+                  <label className="file-btn" htmlFor="audio-file-input">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v12" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 7l4-4 4 4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    Choose file
+                  </label>
+                </div>
+                <div>
+                  <div className="file-hint">MP3/WEBM/WAV — or drag & drop a file onto the page</div>
+                </div>
+              </div>
               <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
                 <button className="btn" onClick={async () => {
                   const b = lastBlobRef.current; if (!b) return alert('No recording available');

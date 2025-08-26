@@ -56,6 +56,7 @@ body{
   backdrop-filter: blur(4px) saturate(110%);
   overflow:hidden;
   -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .card:after{
@@ -99,6 +100,15 @@ body{
 
 .input{background:rgba(250,250,250,0.98);border:1px solid rgba(2,6,18,0.06);padding:10px 14px;border-radius:12px;color:var(--card-light-text);outline:none;min-height:44px;box-shadow: inset 0 1px 0 rgba(255,255,255,0.6)}
 .input::placeholder{color:var(--card-light-muted)}
+
+/* Custom file input button */
+.file-input-wrapper{display:flex;align-items:center;gap:10px}
+.file-input{position:relative}
+.file-input input[type=file]{position:absolute;left:0;top:0;opacity:0;width:1px;height:1px;pointer-events:none}
+.file-btn{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:linear-gradient(90deg,var(--card-light-accent),#5b9eff);color:#fff;font-weight:700;cursor:pointer;border:none}
+.file-btn svg{width:16px;height:16px;opacity:0.95}
+.file-btn:hover{transform:translateY(-3px)}
+.file-hint{font-size:12px;color:var(--card-light-muted)}
 
 .transcript-list{margin-top:14px;display:flex;flex-direction:column;gap:12px;max-height:58vh;overflow:auto;padding-right:6px}
 .transcript-item{padding:14px;border-radius:12px;background:rgba(245,247,249,0.7);display:flex;gap:12px;align-items:flex-start;border:1px solid rgba(2,6,18,0.04)}
