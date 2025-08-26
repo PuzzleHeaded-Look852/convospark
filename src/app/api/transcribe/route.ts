@@ -1,4 +1,4 @@
-import { sessions } from "../_lib/session";
+import { appendTranscript } from "../_lib/session";
 
 // Minimal transcription route. Accepts a POST multipart/form-data with a file field named `audio` and a `sessionId`.
 export async function POST(req: Request) {
@@ -47,9 +47,11 @@ export async function POST(req: Request) {
     }
   }
 
-  const existing = sessions.get(sessionId) || { transcripts: [] };
-  existing.transcripts.push({ text, speaker, timestamp: new Date().toISOString() });
-  sessions.set(sessionId, existing);
+  try {
+    await appendTranscript(sessionId, text, speaker ?? undefined, new Date().toISOString());
+  } catch (e) {
+    console.error('Failed to persist transcript', e);
+  }
 
   return new Response(JSON.stringify({ text, sessionId }), { status: 200, headers: { "Content-Type": "application/json" } });
 }

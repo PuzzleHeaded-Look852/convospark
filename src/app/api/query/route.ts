@@ -1,12 +1,12 @@
-import { sessions } from "../_lib/session";
+import { fetchTranscripts } from "../_lib/session";
 
 export async function POST(req: Request) {
   const body = await req.json();
   const sessionId = body.sessionId || "default";
   const question = body.question || "";
 
-  const s = sessions.get(sessionId) || { transcripts: [] };
-  const context = s.transcripts.map((t) => `${t.timestamp} ${t.speaker || "Unknown"}: ${t.text}`).join("\n");
+  const transcripts = await fetchTranscripts(sessionId);
+  const context = transcripts.map((t) => `${t.timestamp || ''} ${t.speaker || "Unknown"}: ${t.text}`).join("\n");
 
   const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
   if (OPENAI_API_KEY) {
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   }
 
   // Fallback: simple keyword search
-  const hits = s.transcripts.filter((t) => t.text.toLowerCase().includes(question.toLowerCase()));
+  const hits = transcripts.filter((t) => t.text.toLowerCase().includes(question.toLowerCase()));
   const answer = hits.length > 0 ? hits.map((h) => `${h.speaker || "Unknown"}: ${h.text}`).join("\n") : "No matching text found.";
   return new Response(JSON.stringify({ answer }), { headers: { "Content-Type": "application/json" } });
 }

@@ -1,4 +1,4 @@
-import { sessions } from "../_lib/session";
+import { fetchTranscripts } from "../_lib/session";
 
 function createSSEStream(handler: (send: (data: string) => void, abortSignal: AbortSignal) => Promise<void>) {
   const { readable, writable } = new TransformStream();
@@ -30,21 +30,23 @@ export async function GET(req: Request) {
   const sessionId = url.searchParams.get("sessionId") || "default";
 
   return createSSEStream(async (send, abort) => {
-    const s = sessions.get(sessionId) || { transcripts: [] };
+    const s = await fetchTranscripts(sessionId)
 
     // Stream each transcript as a partial summary for demo.
-    for (let i = 0; i < s.transcripts.length; i++) {
-      if (abort.aborted) break;
-      const chunk = s.transcripts[i];
-      // Create a mock summary sentence.
-      const summary = `Summary update ${i + 1}: ${chunk}`;
-      await send(summary);
+    for (let i = 0; i < s.length; i++) {
+      if (abort.aborted) break
+      const chunk = s[i]
+      const speaker = chunk.speaker || 'Unknown'
+      const text = chunk.text || ''
+      // Create a mock summary sentence including speaker
+      const summary = `Update ${i + 1} — ${speaker}: ${text}`
+      await send(summary)
       // small delay to simulate processing
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, 300))
     }
 
     // Final combined summary
-    const final = `Final summary: ${s.transcripts.join(" | ")}`;
-    await send(final);
+    const final = `Final summary: ${s.map((t) => (t.speaker ? t.speaker + ': ' : '') + (t.text || '')).join(' | ')}`
+    await send(final)
   });
 }
