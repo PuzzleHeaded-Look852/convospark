@@ -34,3 +34,17 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Environment variables / secrets
+
+Create a local env file from the example before running the app locally:
+
+```bash
+cp .env.local.example .env.local
+# then edit .env.local and paste your secrets (OPENAI_API_KEY, ZOOM_CLIENT_SECRET, etc.)
+```
+
+Important:
+- Do NOT commit `.env.local` — it is ignored by `.gitignore`.
+- If you accidentally commit secrets, rotate them immediately and remove the file from the repo history.
+
