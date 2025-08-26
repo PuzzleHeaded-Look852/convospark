@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&display=swap');
 
 :root{
@@ -8,13 +9,20 @@
   --accent:#6fc0ff; /* cool blue */
   --text:#eaf6ff;
   --glass: rgba(255,255,255,0.04);
+  /* light-card tokens for a soft white translucent panel */
+  --card-light-bg: rgba(255,255,255,0.88);
+  --card-light-bg-2: rgba(255,255,255,0.84);
+  --card-light-text: #05202a; /* dark teal for high contrast on white */
+  --card-light-muted: rgba(5,32,42,0.6);
+  --card-light-accent: #0b6fff;
+  --card-glow: rgba(11,111,255,0.16);
 }
 
 *{box-sizing:border-box}
 html,body,#root{height:100%}
 body{
   margin:0;
-  font-family: 'Montserrat', Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  font-family: 'Poppins', 'Montserrat', Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   color:var(--text);
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
@@ -36,13 +44,34 @@ body{
 /* Frosted glass card with subtle gradient border */
 .card{
   position:relative;
-  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  /* matte, soft white panel */
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,250,0.98));
+  color: var(--card-light-text);
   border-radius:18px;
-  padding:28px;
-  box-shadow: 0 18px 60px rgba(2,6,18,0.6), inset 0 1px 0 rgba(255,255,255,0.02);
-  border: 1px solid rgba(255,255,255,0.045);
-  backdrop-filter: blur(10px) saturate(130%);
+  padding:32px;
+  box-shadow:
+    0 30px 80px rgba(2,6,18,0.06), /* soft base shadow */
+    0 8px 30px var(--card-glow); /* soft bluish glow */
+  border: 1px solid rgba(2,6,18,0.06);
+  backdrop-filter: blur(4px) saturate(110%);
   overflow:hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.card:after{
+  /* subtle radial glow under the card */
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  width: 360px;
+  height: 120px;
+  filter: blur(28px);
+  background: radial-gradient(closest-side, var(--card-glow), rgba(11,111,255,0));
+  opacity: 0.8;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .card:before{
@@ -52,31 +81,37 @@ body{
   margin:-1px;
   border-radius:20px;
   pointer-events:none;
-  background: linear-gradient(135deg, rgba(127,188,255,0.06), rgba(110,180,255,0.02));
+  background: linear-gradient(135deg, rgba(11,111,255,0.02), rgba(11,111,255,0.00));
   mix-blend-mode: overlay;
-  opacity:0.7;
+  opacity:0.12;
+  z-index: 1;
 }
 
-.header{display:flex;align-items:center;gap:18px;margin-bottom:16px}
-.title{font-weight:700;font-size:26px;letter-spacing:0.2px}
-.subtitle{color:var(--muted);font-size:13px}
+.header{display:flex;align-items:center;gap:18px;margin-bottom:18px;position:relative;z-index:2}
+.title{font-weight:700;font-size:28px;letter-spacing:0.4px;margin:0}
+.subtitle{color:var(--card-light-muted);font-size:13px;margin-top:2px}
 .controls{display:flex;gap:12px;align-items:center}
 
-.btn{background:transparent;border:none;padding:10px 14px;border-radius:14px;color:var(--text);cursor:pointer;transition:transform .12s ease, box-shadow .12s ease, background .12s ease}
-.btn:hover{transform:translateY(-3px)}
-.btn.primary{background:linear-gradient(90deg,var(--accent),#5db8ff);color:#012039;box-shadow:0 10px 36px rgba(95,180,255,0.16)}
-.btn.danger{background:transparent;border:1px solid rgba(255,80,80,0.08);color:#ffb4b4}
+.btn{background:transparent;border:none;padding:10px 14px;border-radius:12px;color:var(--card-light-text);cursor:pointer;transition:transform .12s ease, box-shadow .12s ease, background .12s ease;font-weight:600}
+.btn:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(11,111,255,0.08)}
+.btn.primary{background:linear-gradient(90deg,var(--card-light-accent),#5b9eff);color:#fff;box-shadow:0 12px 30px rgba(11,111,255,0.12);padding:11px 16px}
+.btn.danger{background:transparent;border:1px solid rgba(255,80,80,0.08);color:#b02a2a}
 
-.input{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);padding:10px 14px;border-radius:14px;color:var(--text);outline:none;min-height:42px}
-.input::placeholder{color:rgba(234,246,255,0.45)}
+.input{background:rgba(250,250,250,0.98);border:1px solid rgba(2,6,18,0.06);padding:10px 14px;border-radius:12px;color:var(--card-light-text);outline:none;min-height:44px;box-shadow: inset 0 1px 0 rgba(255,255,255,0.6)}
+.input::placeholder{color:var(--card-light-muted)}
 
 .transcript-list{margin-top:14px;display:flex;flex-direction:column;gap:12px;max-height:58vh;overflow:auto;padding-right:6px}
-.transcript-item{padding:14px;border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));display:flex;gap:12px;align-items:flex-start}
-.speaker{min-width:92px;font-weight:700;color:var(--accent)}
-.line{color:var(--text);font-size:15px;line-height:1.45}
-.time{color:var(--muted);font-size:12px}
+.transcript-item{padding:14px;border-radius:12px;background:rgba(245,247,249,0.7);display:flex;gap:12px;align-items:flex-start;border:1px solid rgba(2,6,18,0.04)}
+.speaker{min-width:92px;font-weight:700;color:#ffffff;background:var(--card-light-accent);padding:8px 10px;border-radius:10px;display:inline-block}
+.line{color:var(--card-light-text);font-size:15px;line-height:1.45}
+.time{color:var(--card-light-muted);font-size:12px}
 .qa{margin-top:18px;display:flex;gap:10px}
-.answer{margin-top:12px;padding:16px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;color:var(--text);font-size:15px}
+.answer{margin-top:12px;padding:16px;background:rgba(245,247,249,0.72);border-radius:12px;color:var(--card-light-text);font-size:15px;border:1px solid rgba(2,6,18,0.04)}
+
+/* custom scrollbar for transcript */
+.transcript-list::-webkit-scrollbar{width:10px}
+.transcript-list::-webkit-scrollbar-thumb{background:linear-gradient(180deg, rgba(11,111,255,0.14), rgba(11,111,255,0.08));border-radius:8px}
+.transcript-list::-webkit-scrollbar-track{background:transparent}
 
 /* small screens */
 @media (max-width:720px){

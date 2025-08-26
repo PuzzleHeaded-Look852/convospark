@@ -1,0 +1,28 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.11/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.11",
+  "version": "1.0.0",
+  "id": "d3f1c2a0-1e6b-4b2c-9f8a-3b2c1d4e5f6a",
+  "packageName": "com.yourcompany.convospark",
+  "developer": {
+    "name": "Your Company",
+  "websiteUrl": "https://your-deploy-url.example.com",
+  "privacyUrl": "https://your-deploy-url.example.com/privacy",
+  "termsOfUseUrl": "https://your-deploy-url.example.com/terms"
+  },
+  "name": { "short": "ConvoSpark", "full": "ConvoSpark - Meeting AI" },
+  "description": { "short": "Meeting AI — live transcription & summaries.", "full": "ConvoSpark brings real-time transcription, summaries, and question-answering to your meetings." },
+  "icons": { "outline": "outline.svg", "color": "color.svg" },
+  "accentColor": "#6fc0ff",
+  "staticTabs": [
+    {
+      "entityId": "convospark-home",
+      "name": "ConvoSpark",
+      "contentUrl": "https://your-deploy-url.example.com",
+      "websiteUrl": "https://your-deploy-url.example.com",
+      "scopes": ["personal"]
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": ["your-deploy-url.example.com"]
+}
