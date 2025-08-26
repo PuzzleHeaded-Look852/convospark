@@ -1,103 +1,107 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [recording, setRecording] = useState(false);
+  const [sessionId] = useState(() => "session-" + Math.random().toString(36).slice(2, 9));
+  const [updates, setUpdates] = useState<string[]>([]);
+  type Transcript = { text: string; speaker?: string; timestamp: string };
+  const [transcripts, setTranscripts] = useState<Transcript[]>([]);
+  const [speaker, setSpeaker] = useState<string>("Speaker 1");
+  const [question, setQuestion] = useState<string>("");
+  const [answer, setAnswer] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    const evt = new EventSource(`/api/stream-summary?sessionId=${sessionId}`);
+    evt.onmessage = (e) => setUpdates((u) => [...u, e.data]);
+    evt.onerror = () => evt.close();
+
+    const fetchTranscripts = async () => {
+      try {
+        const r = await fetch(`/api/session?sessionId=${sessionId}`);
+        const j = await r.json();
+        setTranscripts(j.transcripts || []);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    fetchTranscripts();
+    const timer = setInterval(fetchTranscripts, 2000);
+    return () => { evt.close(); clearInterval(timer); };
+  }, [sessionId]);
+
+  const start = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mr = new MediaRecorder(stream);
+    mediaRecorderRef.current = mr;
+    chunksRef.current = [];
+    mr.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
+    mr.onstop = async () => {
+      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+      const fd = new FormData();
+      fd.append("audio", blob, "audio.webm");
+      fd.append("speaker", speaker);
+  try { await fetch(`/api/transcribe?sessionId=${sessionId}`, { method: "POST", body: fd }); } catch { /* ignore */ }
+    };
+    mr.start();
+    setRecording(true);
+  };
+
+  const stop = () => { mediaRecorderRef.current?.stop(); mediaRecorderRef.current = null; setRecording(false); };
+
+  return (
+    <div className="container">
+      <div className="card">
+        <div className="header">
+          <div>
+            <div className="title">ConvoSpark</div>
+            <div className="subtitle">Minimal meeting AI — record, summarize, and ask in real time</div>
+          </div>
+          <div style={{ flex: 1 }} />
+          <div className="controls">
+            <input className="input" value={speaker} onChange={(e) => setSpeaker(e.target.value)} style={{ width: 140 }} />
+            <button className="btn primary" onClick={start} disabled={recording}>Start</button>
+            <button className="btn" onClick={stop} disabled={!recording}>Stop</button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div style={{ display: 'flex', gap: 18 }}>
+          <div style={{ flex: 1 }}>
+            <div className="subtitle">Conversation</div>
+            <div className="transcript-list">
+              {transcripts.length === 0 && <div className="time">No transcripts yet — record some audio.</div>}
+              {transcripts.map((t: Transcript, i: number) => (
+                <div key={i} className="transcript-item">
+                  <div className="speaker">{t.speaker || 'Unknown'}</div>
+                  <div style={{ flex: 1 }}>
+                    <div className="line">{t.text}</div>
+                    <div className="time">{new Date(t.timestamp).toLocaleTimeString()}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ width: 360 }}>
+            <div className="subtitle">Live summary</div>
+            <div className="card" style={{ marginTop: 8, minHeight: 220 }}>
+              <div style={{ fontSize: 13, color: 'var(--muted)' }}>{updates.length === 0 ? 'No summary updates yet.' : updates[updates.length - 1]}</div>
+            </div>
+
+            <div className="qa">
+              <input className="input" value={question} onChange={(e) => setQuestion(e.target.value)} style={{ flex: 1 }} placeholder="Ask about this meeting" />
+              <button className="btn primary" onClick={async () => { setAnswer(null); try { const resp = await fetch('/api/query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId, question }) }); const data = await resp.json(); setAnswer(data.answer); } catch (_) { setAnswer('Error asking question'); } }}>Ask</button>
+            </div>
+            {answer && <div className="answer">{answer}</div>}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
+ 
+
