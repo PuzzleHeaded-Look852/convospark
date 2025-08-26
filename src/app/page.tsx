@@ -13,6 +13,8 @@ export default function Home() {
   const [answer, setAnswer] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const lastBlobRef = useRef<Blob | null>(null);
+  const [recordingUrl, setRecordingUrl] = useState('')
 
   useEffect(() => {
     const evt = new EventSource(`/api/stream-summary?sessionId=${sessionId}`);
@@ -36,12 +38,25 @@ export default function Home() {
 
   const start = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mr = new MediaRecorder(stream);
+    // choose best available mime type for mobile compatibility
+    const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/wav']
+    let mime = ''
+    for (const c of candidates) {
+      try {
+        const tester = (MediaRecorder as unknown as { isTypeSupported?: (s: string) => boolean })
+        if (tester.isTypeSupported?.(c)) { mime = c; break }
+      } catch {
+        // ignore
+      }
+    }
+    const mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream)
     mediaRecorderRef.current = mr;
     chunksRef.current = [];
     mr.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
     mr.onstop = async () => {
-      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+      const blobType = chunksRef.current[0]?.type || 'audio/webm'
+      const blob = new Blob(chunksRef.current, { type: blobType });
+  lastBlobRef.current = blob
       const fd = new FormData();
       fd.append("audio", blob, "audio.webm");
       fd.append("speaker", speaker);
@@ -72,6 +87,35 @@ export default function Home() {
         <div style={{ display: 'flex', gap: 18 }}>
           <div style={{ flex: 1 }}>
             <div className="subtitle">Conversation</div>
+            <div style={{ marginTop: 8, marginBottom: 8 }}>
+              <label style={{ fontSize: 13, color: 'var(--card-light-muted)', display: 'block', marginBottom: 6 }}>Upload audio file (fallback):</label>
+              <input type="file" accept="audio/*" onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                lastBlobRef.current = f
+                const fd = new FormData(); fd.append('audio', f); fd.append('speaker', speaker);
+                try { await fetch(`/api/transcribe?sessionId=${sessionId}`, { method: 'POST', body: fd }); alert('Uploaded'); } catch { alert('Upload failed'); }
+              }} />
+              <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                <button className="btn" onClick={async () => {
+                  const b = lastBlobRef.current; if (!b) return alert('No recording available');
+                  const fd = new FormData(); fd.append('audio', b); fd.append('sessionId', sessionId);
+                  try {
+                    const r = await fetch('/api/diarize', { method: 'POST', body: fd });
+                    const j = await r.json(); alert('Diarize done: ' + (j.parts?.length || 0))
+                  } catch { alert('Diarize failed') }
+                }}>Diarize fallback</button>
+                <input className="input" placeholder="Zoom recording URL (for test)" value={recordingUrl} onChange={(e) => setRecordingUrl(e.target.value)} />
+                <button className="btn" onClick={async () => {
+                  if (!recordingUrl) return alert('enter a recording url');
+                  try {
+                    const body = { recordingUrl, sessionId }
+                    const r = await fetch('/api/zoom/forward', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+                    const j = await r.json(); alert('Forwarded: ' + JSON.stringify(j))
+                  } catch { alert('forward failed') }
+                }}>Forward to Zoom</button>
+              </div>
+            </div>
             <div className="transcript-list">
               {transcripts.length === 0 && <div className="time">No transcripts yet — record some audio.</div>}
               {transcripts.map((t: Transcript, i: number) => (
@@ -94,7 +138,7 @@ export default function Home() {
 
             <div className="qa">
               <input className="input" value={question} onChange={(e) => setQuestion(e.target.value)} style={{ flex: 1 }} placeholder="Ask about this meeting" />
-              <button className="btn primary" onClick={async () => { setAnswer(null); try { const resp = await fetch('/api/query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId, question }) }); const data = await resp.json(); setAnswer(data.answer); } catch (_) { setAnswer('Error asking question'); } }}>Ask</button>
+              <button className="btn primary" onClick={async () => { setAnswer(null); try { const resp = await fetch('/api/query', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId, question }) }); const data = await resp.json(); setAnswer(data.answer); } catch { setAnswer('Error asking question'); } }}>Ask</button>
             </div>
             {answer && <div className="answer">{answer}</div>}
           </div>

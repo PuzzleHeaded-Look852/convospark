@@ -1,4 +1,5 @@
 import { fetchTranscripts } from "../_lib/session";
+import { subscribe } from '../_lib/bus'
 
 function createSSEStream(handler: (send: (data: string) => void, abortSignal: AbortSignal) => Promise<void>) {
   const { readable, writable } = new TransformStream();
@@ -32,21 +33,22 @@ export async function GET(req: Request) {
   return createSSEStream(async (send, abort) => {
     const s = await fetchTranscripts(sessionId)
 
-    // Stream each transcript as a partial summary for demo.
+    // Stream existing transcripts first
     for (let i = 0; i < s.length; i++) {
       if (abort.aborted) break
       const chunk = s[i]
-      const speaker = chunk.speaker || 'Unknown'
-      const text = chunk.text || ''
-      // Create a mock summary sentence including speaker
-      const summary = `Update ${i + 1} — ${speaker}: ${text}`
-      await send(summary)
-      // small delay to simulate processing
-      await new Promise((r) => setTimeout(r, 300))
+      await send(`${chunk.speaker || 'Unknown'}: ${chunk.text}`)
     }
 
-    // Final combined summary
-    const final = `Final summary: ${s.map((t) => (t.speaker ? t.speaker + ': ' : '') + (t.text || '')).join(' | ')}`
-    await send(final)
+    // Subscribe for realtime updates and forward them
+    const unsub = subscribe(sessionId, (msg) => {
+      if (!abort.aborted) send(msg)
+    })
+
+    // wait until abort
+    await new Promise<void>((resolve) => {
+      const int = setInterval(() => { if (abort.aborted) { clearInterval(int); resolve() } }, 250)
+    })
+    unsub()
   });
 }
